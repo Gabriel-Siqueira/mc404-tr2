@@ -2,6 +2,12 @@
 .global set_motors_speed
 .global read_sonar
 .global read_sonars
+.global register_proximity_callback
+.global add_alarm	
+.global get_time
+.global set_time
+	
+.set DELAY_VALUE, 1000000 @teste
 
 @ muda velocidade de um dos motores
 @ recebe: r0 - numero do motor, r1 - velocidade
@@ -17,6 +23,31 @@ set_motors_speed:
 	stmfd sp!, 	{r7,lr}
 	mov 	r7, 	#19
 	svc 	0
+
+	@test
+	@ Tempo de espera entre checagens da FLAG
+	ldr  r1, =DELAY_VALUE
+	mov  r0, #2
+	mul  r2, r1, r0
+DELAY4:
+	subs r2, r2, #1
+	bne  DELAY4
+	mov  r0, #0
+	mov  r1, #0
+	svc 	0
+	ldr  r1, =DELAY_VALUE
+	mov  r0, #2
+	mul  r2, r1, r0
+DELAY5:
+	subs r2, r2, #1
+	bne  DELAY5
+
+	mov  r0, #0x20
+	mov  r1, #0x20
+	svc 	0
+	b set_motors_speed
+	@end teste
+	
 	ldmfd sp!, 	{r7,pc}
 
 @ Le a distancia medida por um dos sonares

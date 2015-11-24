@@ -29,10 +29,11 @@ RESET_HANDLER:
 	orr  r2, r2,  #0x00040000
 	str  r2, [r1, #GPIO_DR]
 	
+end:
 	@ Grava novo valor de velocidade do motor
 	ldr  r2, [r1, #GPIO_DR]
 	bic  r2, r2,  #0x01F80000
-	orr  r2, r2,  R0, LSR #19 
+	orr  r2, r2,  R0, LSL #19 
 	str  r2, [r1, #GPIO_DR]
 	
 	@ Habilita novo valor
@@ -40,5 +41,12 @@ RESET_HANDLER:
 	and  r2, r2,  #0xFFFBFFFF
 	str  r2, [r1, #GPIO_DR]
 
-end:
 	b end
+
+
+
+
+
+
+
+

@@ -19,7 +19,7 @@
 .align 4
 
 @ Constantes de controle
-.set DELAY_VALUE, 1000
+.set DELAY_VALUE, 1000000
 	
 CONFIG_GPIO:
 
@@ -51,7 +51,7 @@ MOTOR0:
 	@ Grava novo valor de velocidade do motor
 	ldr  r2, [r1, #GPIO_DR]
 	bic  r2, r2,  #0x01F80000
-	orr  r2, r2,  R0, LSR #19 
+	orr  r2, r2,  R0, LSL #19 
 	str  r2, [r1, #GPIO_DR]
 	
 	@ Habilita novo valor
@@ -76,7 +76,7 @@ MOTOR1:
 	@ Grava novo valor de velocidade do motor
 	ldr  r2, [r1, #GPIO_DR]
 	bic  r2, r2,  #0xFC000000
-	orr  r2, r2,  R0, LSR #26 
+	orr  r2, r2,  R0, LSL #26 
 	str  r2, [r1, #GPIO_DR]
 	
 	@ Habilita novo valor
@@ -94,21 +94,17 @@ SONAR:
 	@ insere em r1 o endereco base para configurar o GPIO
 	ldr  r3, =GPIO_BASE
 	
-	@ grava valor de SONAR_MUX
+	@ grava valor de SONAR_MUX e zera o TRIGGER
 	ldr  r2, [r3, #GPIO_DR]
 	bic  r2, r2,  #0x0000007C
-	orr  r2, r2,  R0, LSR #2 
+	orr  r2, r2,  R0, LSL #2     @ grava valor 
+	and  r2, r2,  #0xFFFFFFFD    @ zera TRIGGER
 	str  r2, [r3, #GPIO_DR]
 	
-	@ Zera TRIGGER
-	ldr  r2, [r3, #GPIO_DR]
-	and  r2, r2,  #0xFFFFFFFD
-	str  r2, [r3, #GPIO_DR]
-
 	@ tempo de espera nescessario para setar o TRIGGER
 	ldr  r1, =DELAY_VALUE
-	mov  r3, #3
-	mul  r2, r1, r3
+	mov  r0, #3
+	mul  r2, r1, r0
 DELAY1:
 	subs r2, r2, #1
 	bne  DELAY1
@@ -120,8 +116,8 @@ DELAY1:
 	
 	@ tempo de espera nescessario para zerar o TRIGGER
 	ldr  r1, =DELAY_VALUE
-	mov  r3, #3
-	mul  r2, r1, r3
+	mov  r0, #3
+	mul  r2, r1, r0
 DELAY2:
 	subs r2, r2, #1
 	bne  DELAY2
@@ -139,8 +135,8 @@ WAIT_FLAG:
 
 	@ Tempo de espera entre checagens da FLAG
 	ldr  r1, =DELAY_VALUE
-	mov  r3, #2
-	mul  r2, r1, r3
+	mov  r0, #2
+	mul  r2, r1, r0
 DELAY3:
 	subs r2, r2, #1
 	bne  DELAY3

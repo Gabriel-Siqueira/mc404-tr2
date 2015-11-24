@@ -44,61 +44,59 @@ interrupt_vector:
 RESET_HANDLER:
 	
 	@ Zera o contador
-	@ldr r2, =CONTADOR
-	@mov r0, #0
-	@str r0, [r2]
+	ldr r2, =CONTADOR
+	mov r0, #0
+	str r0, [r2]
 
 	@ Ajusta o endereço do vetor de interrupçoes
 	ldr r0, =interrupt_vector
 	mcr p15, 0, r0, c12, c0, 0
 
 	@ configura o GPT
-	@ldr r0, =CONFIG_GPT
-	@blx r0
+	ldr r0, =CONFIG_GPT
+	blx r0
 
 	@ configurar o TZIC
-	@ldr r0, =CONFIG_TZIC
-	@blx r0
+	ldr r0, =CONFIG_TZIC
+	blx r0
 
 	@ configurar o GPIO
-	@ ldr r0, =CONFIG_GPIO
-	@ blx r0
+	ldr r0, =CONFIG_GPIO
+	blx r0
 
 	@ configura chamadas de sistema
-	@ldr r0, =CONFIG_SVC
-	@blx r0
+	ldr r0, =CONFIG_SVC
+	blx r0
 
 	@ inicializa pilhas
 
 	@ inicialisa pilha do modo de supervisor
-	@ldr sp, =SVC_SP
+	ldr sp, =SVC_SP
 
 	@ muda para modo de sistema
-	@mrs r0, cpsr
-	@orr r0, r0, #0x1F     @ seleciona bits para modo de sistema
-	@msr cpsr_c, r0 
+	mrs r0, cpsr
+	orr r0, r0, #0x1F     @ seleciona bits para modo de sistema
+	msr cpsr_c, r0 
 	
 	@ inicialisa pilha do modo de usuario
-	@ldr sp, =USR_SP
+	ldr sp, =USR_SP
 
 	@ muda para modo de interrupcao
-	@mrs r0, cpsr
-	@bic r0, r0, #0x1F     @ limpa bites de modo
-	@orr r0, r0, #0x12     @ seleciona bits para mode de interrupcao
-	@msr cpsr_c,r0 
+	mrs r0, cpsr
+	bic r0, r0, #0x1F     @ limpa bites de modo
+	orr r0, r0, #0x12     @ seleciona bits para mode de interrupcao
+	msr cpsr_c,r0 
 	
 	@ inicialisa pilha do modo de interrupcao
-	@ldr sp, =IRQ_SP
+	ldr sp, =IRQ_SP
 	
 	@ habilita interrupcoes e entra em modo de usuario
-	@msr  CPSR_c, #0x10
+	msr  CPSR_c, #0x10
 
 	@ transfere fluxo para aplicacao de controle
 
-	@teste
-end:
-	b end
-	@end test
+	ldr  r0, =0x77802000
+	bx   r0
 
 @---------------------------------------------------------
 
