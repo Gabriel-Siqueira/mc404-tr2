@@ -5,12 +5,12 @@
 	
 @ constantes de controle
 
-.set MAX_CALLBACKS 20
-.set MAX_ALARMS 20
+.set MAX_CALLBACKS, 20
+.set MAX_ALARMS, 20
 
 @ declara rotulos globais
 
-.global CONFIG_GPT
+.global CONFIG_SVC
 .global read_sonar
 .global register_proximity_callback
 .global set_motor_speed
@@ -49,7 +49,7 @@ read_sonar:
 	@ caso o indentificador do sonar seja invalido retorna -1
 	cmp   	r0, #16
 	movhs 	r0, #-1
-	ldmfdhs sp!,{pc}
+	ldmhsfd sp!,{pc}
 
 	@ chama rotina realiza leitura do sonar
 	bl SONAR
@@ -63,12 +63,12 @@ read_sonar:
 @ -2: sonar invalido)
 register_proximity_callback:
 
-	stmfd sp!,{lr,r4,r5}
+	stmfd sp!,{r4,r5,lr}
 
 	@ caso o indentificador do sonar seja invalido retorna -2
 	cmp   	r0, #16
 	movhs 	r0, #-2
-	ldmfdhs sp!,{pc,r4,r5}
+	ldmhsfd sp!,{r4,r5,pc}
 
 	@ salva R0 e R1
 	mov     r4, r0
@@ -80,7 +80,7 @@ register_proximity_callback:
 	ldr     r1, [r2]
 	cmp 		r1, r0
 	moveq   r0, #-1 
-	ldmfdeq sp!,{pc,r4,r5}
+	ldmeqfd sp!,{r4,r5,pc}
 
 	@ incrementa o numero de callbacks
 	add r1, #1
@@ -91,7 +91,7 @@ register_proximity_callback:
 
 	@ como os valores eram validos retorna 0
 	mov r0, #0
-	ldmfdeq sp!,{pc,r4,r5}
+	ldmfd sp!,{r4,r5,pc}
 
 @ ajusta velocidade de um dos motores
 @ recebe: R0 - identificador, R1 - velocidade
@@ -103,13 +103,13 @@ set_motor_speed:
 	@ caso o indentificador do motor seja invalido retorna -1
 	cmp   	r0, #2
 	movhs 	r0, #-1
-	ldmfdhs sp!,{pc}
+	ldmhsfd sp!,{pc}
 
 	
 	@ caso a velocidade seja invalida retorna -2
-	cmp   r0, #0x40
+	cmp   r1, #0x40
 	movhs r0, #-2
-	movhs pc, lr
+	ldmhsfd sp!,{pc}
 
 	@ realiza alteracao no motor requerido
 	cmp   r0, #0
@@ -119,8 +119,7 @@ set_motor_speed:
 
 	@ como os valores eram validos retorna 0
 	mov r0, #0
-	mov pc, lr
-	ldmfd sp!,{lr,r4,r5}
+	ldmfd sp!,{pc}
 
 @ ajusta velocidade dos motores
 @ recebe: R0 - Velocidade motor 0, R1 - velocidade motor 1
@@ -128,17 +127,17 @@ set_motor_speed:
 @ -2: velocidade 1 invalida)
 set_motors_speed:
 
-	stmfd sp!,{lr,r4}
+	stmfd sp!,{r4,lr}
 
 	@ caso a velocidade do motor 0 seja invalida retorna -1
 	cmp  	 	r0, #0x40
 	movhs 	r0, #-1
-	ldmfdhs sp!,{pc,r4}
+	ldmhsfd sp!,{r4,pc}
 
 	@ caso a velocidade do motor 1 seja invalida retorna -2
 	cmp   	r1, #0x40
 	movhs 	r0, #-2
-	ldmfdhs sp!,{pc,r4}
+	ldmhsfd sp!,{r4,pc}
 
 	@ realiza alteracao das velocidades
 	mov r4, r0
@@ -151,7 +150,7 @@ set_motors_speed:
 
 	@ como os valores eram validos retorna 0
 	mov 	r0, #0
-	ldmfd sp!,{pc,r4}
+	ldmfd sp!,{r4,pc}
 	
 @ retorna tempo do sistema
 @ retorna: R0 - tempo
@@ -181,7 +180,7 @@ set_time:
 @ -2: tempo invalido)
 set_alarm:
 
-	stmfd sp!,{lr,r4,r5}
+	stmfd sp!,{r4,r5,lr}
 
 	@ caso o  tempo seja menor que o tempo atual do sistema retorna -2
 	mov 		r4, r0
@@ -189,7 +188,7 @@ set_alarm:
 	bl 			get_time
 	cmp 		r0, r5
 	movlo 	r0, #-2
-	ldmfdlo sp!,{pc,r4,r5}
+	ldmlofd sp!,{r4,r5,pc}
 	
 	@ caso o numero de alarmes se torne maior que o valor maximo retorna -1
 	ldr 		r0, =MAX_ALARMS
@@ -197,7 +196,7 @@ set_alarm:
 	ldr     r1, [r2]
 	cmp 		r1, r0
 	moveq   r0, #-1 
-	ldmfdeq sp!,{pc,r4,r5}
+	ldmeqfd sp!,{r4,r5,pc}
 
 	@ incrementa o numero de alarmes
 	add r1, #1
@@ -208,4 +207,4 @@ set_alarm:
 
 	@ como os valores eram validos retorna 0
 	mov r0, #0
-	ldmfd sp!,{pc,r4,r5}
+	ldmfd sp!,{r4,r5,pc}

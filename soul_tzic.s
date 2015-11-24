@@ -1,7 +1,14 @@
-@ ARRUMAR *********************************************************
 @=========================================================
-@ Programa responsavel por inicializar o TZIC 
+@ Codigo responsavel por inicializar o TZIC 
 @=========================================================
+
+@ Constantes para os enderecos do TZIC
+.set TZIC_BASE,             0x0FFFC000
+.set TZIC_INTCTRL,          0x0
+.set TZIC_INTSEC1,          0x84 
+.set TZIC_ENSET1,           0x104
+.set TZIC_PRIOMASK,         0xC
+.set TZIC_PRIORITY9,        0x424
 
 @ declara rotulos globais
 .global CONFIG_TZIC
@@ -10,14 +17,6 @@
 
 CONFIG_TZIC:
 	
-	@ Constantes para os enderecos do TZIC
-	.set TZIC_BASE,             0x0FFFC000
-	.set TZIC_INTCTRL,          0x0
-	.set TZIC_INTSEC1,          0x84 
-	.set TZIC_ENSET1,           0x104
-	.set TZIC_PRIOMASK,         0xC
-	.set TZIC_PRIORITY9,        0x424
-
 	@ insere em r1 o endereco base para configurar o TZIC
 	ldr	r1, =TZIC_BASE
 
@@ -26,7 +25,6 @@ CONFIG_TZIC:
 	str	r0, [r1, #TZIC_INTSEC1]
 
 	@ Habilita interrupcao 39 (GPT)
-
 	mov	r0, #(1 << 7)
 	str	r0, [r1, #TZIC_ENSET1]
 

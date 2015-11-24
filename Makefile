@@ -7,7 +7,7 @@
 
 # ----------------------------------
 # SOUL object files -- Add your SOUL object files here 
-SOUL_OBJS=soul_core.o soul_gpio.o soul_gpt.o soul_tzic.o
+SOUL_OBJS=soul_core.o soul_gpio.o soul_gpt.o soul_tzic.o soul_svc.o
 
 # ----------------------------------
 # Compiling/Assembling/Linking Tools and flags
