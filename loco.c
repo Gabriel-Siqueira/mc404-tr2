@@ -15,7 +15,8 @@ void _start(void) {
 	/* } else if(*d <= LIMIAR) { */
 	/* 	set_motors_speed(0,SPEED); */
 	/* } else { */
-	set_motors_speed(SPEED,SPEED);
+	set_motor_speed(1,SPEED);
+	set_motor_speed(0,SPEED);
 	/* } */
 	while(1)
 	{

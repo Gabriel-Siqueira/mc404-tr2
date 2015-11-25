@@ -21,26 +21,30 @@ RESET_HANDLER:
 	@ configura corretamente os pinos de entrada e saida
 	ldr r0, =0xFFFC003E
 	str r0, [r1, #GPIO_GDIR]
-
+	
 	mov r0, #30
+	mov r5, #30
 
 	@ Seta MOTOR0_WRITE para inicializar a escrita
 	ldr  r2, [r1, #GPIO_DR]
-	orr  r2, r2,  #0x00040000
+	orr  r2, r2,  #0x02040000
 	str  r2, [r1, #GPIO_DR]
-	
-end:
+
 	@ Grava novo valor de velocidade do motor
 	ldr  r2, [r1, #GPIO_DR]
-	bic  r2, r2,  #0x01F80000
+	ldr  r4, =0xFDF80000
+	bic  r2, r2, r4  
+	orr  r2, r2,  R5, LSL #26
 	orr  r2, r2,  R0, LSL #19 
 	str  r2, [r1, #GPIO_DR]
 	
 	@ Habilita novo valor
 	ldr  r2, [r1, #GPIO_DR]
-	and  r2, r2,  #0xFFFBFFFF
+	ldr  r4, =0xFDFBFFFF
+	and  r2, r2, r4
 	str  r2, [r1, #GPIO_DR]
 
+end:
 	b end
 
 

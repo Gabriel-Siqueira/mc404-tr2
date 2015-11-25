@@ -13,6 +13,7 @@
 .global get_time
 .global set_time
 .global set_alarm
+.global back_svc
 	
 .text
 
@@ -58,7 +59,7 @@ register_proximity_callback:
 	ldr     r1, [r2]
 	cmp 		r1, r0
 	moveq   r0, #-1 
-	ldmeqfd sp!,{r4,r5,pc}
+	ldmeqfd sp!,{r4,r5,r6,pc}
 
 	@ recupera r0, r1 e r2
 	mov r0, r4
@@ -86,17 +87,35 @@ set_motor_speed:
 	ldmhsfd sp!,{pc}
 	
 	@ caso a velocidade seja invalida retorna -2
-	cmp   r1, #0x40
-	movhs r0, #-2
+	cmp   	r1, #0x40
+	movhs 	r0, #-2
 	ldmhsfd sp!,{pc}
 
 	@ realiza alteracao no motor requerido
 	cmp   r0, #0
-	mov   r0, r1
-	ldreq r2, =MOTOR0 
-	bleq  MOTOR0
-	ldrne r2, =MOTOR1 
-	blne  MOTOR1
+	ldr   r2, =speeds
+	ldr   r0, [r2]
+	bne   MOTOR1
+
+	@ caso seja uma mudanca no motor 0 
+MOTOR0:
+	bic   r0, r0, #0x01F80000
+	orr   r0, r0, R1, LSL #19
+	b     DONE
+	
+	@ caso seja uma mudanca no motor 1 
+MOTOR1:	
+	bic   r0, r0, #0xFC000000
+	orr   r0, r0, R1, LSL #26
+
+DONE:
+	@ salva nova mascara de velocidades
+	ldr   r2, =speeds
+	str   r0, [r2]
+
+	@ muda velocidades do motor
+	ldr 	r2, =CHANGE_SPEEDS 
+	blx 	r2
 
 	@ como os valores eram validos retorna 0
 	mov r0, #0
@@ -108,7 +127,7 @@ set_motor_speed:
 @ -2: velocidade 1 invalida)
 set_motors_speed:
 
-	stmfd sp!,{r4,lr}
+	stmfd sp!,{lr}
 
 	@ caso a velocidade do motor 0 seja invalida retorna -1
 	cmp  	 	r0, #0x40
@@ -120,18 +139,30 @@ set_motors_speed:
 	movhs 	r0, #-2
 	ldmhsfd sp!,{r4,pc}
 
-	@ realiza alteracao das velocidades
-	mov r4, r0
-	mov r0, #1
-	bl  set_motor_speed
-	
-	mov r1, r4
-	mov r0, #0
-	bl  set_motor_speed
+	@ realiza alteracao nos motores
+	ldr   r2, =speeds
+	ldr   r3, [r2]
+
+	@ altera velocidade do motor 0 
+	bic   r3, r3, #0x01F80000
+	orr   r3, r3, r0, LSL #19
+
+	@ altera velocidade do motor 1 
+	bic   r3, r3, #0xFC000000
+	orr   r3, r3, r1, LSL #26
+
+	@ salva nova mascara de velocidades
+	ldr   r2, =speeds
+	str   r3, [r2]
+
+	@ muda velocidades do motor
+	mov 	r0, r3
+	ldr 	r2, =CHANGE_SPEEDS 
+	blx 	r2
 
 	@ como os valores eram validos retorna 0
 	mov 	r0, #0
-	ldmfd sp!,{r4,pc}
+	ldmfd sp!,{pc}
 	
 @ retorna tempo do sistema
 @ retorna: R0 - tempo
@@ -167,7 +198,7 @@ set_alarm:
 	mov 		r4, r0
 	mov 		r5, r1
 	bl 			get_time
-	cmp 		r0, r5
+	cmp 		r5, r0
 	movlo 	r0, #-2
 	ldmlofd sp!,{r4,r5,pc}
 	
@@ -179,7 +210,7 @@ set_alarm:
 	moveq   r0, #-1 
 	ldmeqfd sp!,{r4,r5,pc}
 
-	@ recupera r0 r r1
+	@ recupera r0 e r1
 	mov r0, r4
 	mov r1, r5
 	
@@ -188,5 +219,34 @@ set_alarm:
 	blx r4
 
 	@ como os valores eram validos retorna 0
-	mov r0, #0
+	mov   r0, #0
 	ldmfd sp!,{r4,r5,pc}
+
+@ Retorna para o modo de sistema depois da chamada de uma funcao
+@ de callback ou alarme
+back_svc:
+
+	@ se for depois de um alarme
+	ldr 	r0, =alarms_on
+	ldr		r1, [r0]
+	cmp 	r1, #1
+	beq 	return_to_al
+
+	@ se for depois de uma callback
+	ldr 	r0, =callbacks_on
+	ldr		r1, [r0]
+	cmp 	r1, #1
+	beq 	return_to_call
+
+	@ se nao for nenhum dos casos anteriores nao faz nada
+	mov   pc, lr
+
+
+
+
+
+
+
+
+
+

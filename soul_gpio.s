@@ -2,12 +2,18 @@
 @ Codigo responsavel por inicializar o GPIO e
 @ realizar qualquer alteracao em seus valores
 @=========================================================
-	
+
+@ Constantes de controle
+.set DELAY_VALUE, 500000
+
 @ declara rotulos globais
 .global CONFIG_GPIO	
-.global MOTOR0	
-.global MOTOR1
+.global CHANGE_SPEEDS
 .global SONAR	
+.global speeds	
+	
+@ variavel que armazena as velocidades do motor
+speeds:	 .word  0
 	
 @ Constantes para os enderecos do GPIO
 .set GPIO_BASE, 0x53F84000
@@ -18,8 +24,6 @@
 .text
 .align 4
 
-@ Constantes de controle
-.set DELAY_VALUE, 1000000
 	
 CONFIG_GPIO:
 
@@ -36,52 +40,29 @@ CONFIG_GPIO:
 	
 	mov pc, lr
 
-@ altera velocidade do motor 0
-@ recebe: R0 - velocidade
-MOTOR0:
+	
+@ altera velocidades dos motores
+@ recebe: r0 - mascara com velocidades
+CHANGE_SPEEDS:
 
 	@ insere em r1 o endereco base para configurar o GPIO
 	ldr  r1, =GPIO_BASE
 
-	@ Seta MOTOR0_WRITE para inicializar a escrita
+	@ Seta MOTOR0_WRITE e MOTOR1_WRITE para inicializar a escrita
 	ldr  r2, [r1, #GPIO_DR]
-	orr  r2, r2,  #0x00040000
+	orr  r2, r2,  #0x02040000
 	str  r2, [r1, #GPIO_DR]
 	
 	@ Grava novo valor de velocidade do motor
 	ldr  r2, [r1, #GPIO_DR]
-	bic  r2, r2,  #0x01F80000
-	orr  r2, r2,  R0, LSL #19 
+	ldr  r3, =0xFDF80000
+	bic  r2, r2, r3  
+	orr  r2, r2,  R0
 	str  r2, [r1, #GPIO_DR]
 	
 	@ Habilita novo valor
 	ldr  r2, [r1, #GPIO_DR]
-	and  r2, r2,  #0xFFFBFFFF
-	str  r2, [r1, #GPIO_DR]
-
-	@ Volta da rotina
-	mov pc, lr
-	
-@ altera velocidade do motor 1
-MOTOR1:
-
-	@ insere em r1 o endereco base para configurar o GPIO
-	ldr  r1, =GPIO_BASE
-
-	@ Seta MOTOR1_WRITE para inicializar a escrita
-	ldr  r2, [r1, #GPIO_DR]
-	orr  r2, r2,  #0x02000000
-	str  r2, [r1, #GPIO_DR]
-	
-	@ Grava novo valor de velocidade do motor
-	ldr  r2, [r1, #GPIO_DR]
-	bic  r2, r2,  #0xFC000000
-	orr  r2, r2,  R0, LSL #26 
-	str  r2, [r1, #GPIO_DR]
-	
-	@ Habilita novo valor
-	ldr  r2, [r1, #GPIO_DR]
-	and  r2, r2,  #0xFDFFFFFF
+	and  r2, r2,  #0xFDFBFFFF
 	str  r2, [r1, #GPIO_DR]
 
 	@ Volta da rotina

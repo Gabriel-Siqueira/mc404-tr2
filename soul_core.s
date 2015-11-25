@@ -8,19 +8,13 @@
 @*---------------------- dados ---------------------------
 
 @ reserva espaco das pilhas
-.skip 100
+.skip 50
 USR_SP:
-.skip 100
+.skip 50
 SVC_SP:
-.skip 100
+.skip 50
 IRQ_SP:
 
-@ indica que as callback estao sendo checadas ou executadas
-alarms_on:		.word 0
-	
-@ indica que os alarmes estao sendo checados ou executados
-callbacks_on:	.word 0
-	
 @---------------------------------------------------------
 
 .section .iv,"a"
@@ -90,7 +84,7 @@ RESET_HANDLER:
 	@ muda para modo de interrupcao
 	mrs r0, cpsr
 	bic r0, r0, #0x1F     @ limpa bites de modo
-	orr r0, r0, #0x12     @ seleciona bits para mode de interrupcao
+	orr r0, r0, #0x12     @ seleciona bits para modo de interrupcao
 	msr cpsr_c,r0 
 	
 	@ inicialisa pilha do modo de interrupcao
@@ -140,6 +134,10 @@ SVC_HANDLER:
 	ldreq r5, =set_alarm
 	blxeq r5
 	
+	cmp   r7, #23
+	ldreq r5, =back_svc
+	blxeq r5
+
 	@ fim do tratamento
 	ldmfd sp!,{r0-r12,pc}
 	sub   lr, lr, #4
@@ -169,7 +167,8 @@ IRQ_HANDLER:
 	beq   SKIP
 
 	@ salva spsr para o caso de outra interrupcao
-	mov   r6, spsr
+	mrs   r6, spsr
+@	stmfd sp!, {r6}
 
 	@ habilita interrupcoes
 	msr  CPSR_c, #0x12
@@ -177,7 +176,7 @@ IRQ_HANDLER:
 	@ checa callbacks que deven ser executadas
 	mov   r1, #1
 	str   r1, [r4]
-	ldr   r0, =CHECK_CALLBACK
+	@ ldr   r0, =CHECK_CALLBACK
 	blx   r0
 	mov   r1, #0
 	str   r1, [r4]
@@ -185,22 +184,24 @@ IRQ_HANDLER:
 	@ checa alarmes que devem ser executados
 	mov   r1, #1
 	str   r1, [r5]
-	ldr   r0, =CHECK_ALARM
+	@ ldr   r0, =CHECK_ALARM
 	blx   r0
 	mov   r1, #0
 	str   r1, [r5]
 
-	mov   spsr, r6
+@	ldmfd sp!, {r6}
+	msr   spsr, r6
 	
 SKIP:	
 	
 	@ fim do tratamento
-	ldmfd sp!, {r0-r3,lr}
+	ldmfd sp!, {r0-r6,lr}
 	sub   lr,  lr, #4
 	movs  pc,  lr              @ retorna
 
 @---------------------------------------------------------
 	
+
 @*----------------- interrupcaoes nao tratadas -----------
 	
 UNTREATED:	b UNTREATED
