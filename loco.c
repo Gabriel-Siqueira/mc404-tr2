@@ -7,16 +7,16 @@
 void _start(void) {
   unsigned int distances[16];
 	unsigned short *e,*d;
-	
-		/* read_sonar(3,e); */
-		/* read_sonar(4,d); */
-		/* if(*e <= LIMIAR) { */
-		/* 	set_motors_speed(SPEED,0); */
-		/* } else if(*d <= LIMIAR) { */
-		/* 	set_motors_speed(0,SPEED); */
-		/* } else { */
-		set_motors_speed(SPEED,SPEED);
-		/* } */
+
+	/* read_sonar(3,e); */
+	/* read_sonar(4,d); */
+	/* if(*e <= LIMIAR) { */
+	/* 	set_motors_speed(SPEED,0); */
+	/* } else if(*d <= LIMIAR) { */
+	/* 	set_motors_speed(0,SPEED); */
+	/* } else { */
+	set_motors_speed(SPEED,SPEED);
+	/* } */
 	while(1)
 	{
 	}

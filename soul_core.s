@@ -14,6 +14,12 @@ USR_SP:
 SVC_SP:
 .skip 100
 IRQ_SP:
+
+@ indica que as callback estao sendo checadas ou executadas
+alarms_on:		.word 0
+	
+@ indica que os alarmes estao sendo checados ou executados
+callbacks_on:	.word 0
 	
 @---------------------------------------------------------
 
@@ -64,8 +70,8 @@ RESET_HANDLER:
 	ldr r0, =CONFIG_GPIO
 	blx r0
 
-	@ configura chamadas de sistema
-	ldr r0, =CONFIG_SVC
+	@ inicializa estruturas de alarmes e callbacks
+	ldr r0, =CONFIG_AL_CALL
 	blx r0
 
 	@ inicializa pilhas
@@ -145,15 +151,53 @@ SVC_HANDLER:
 @*----------------- insterrupcoes por hardware -----------
 
 IRQ_HANDLER:
-	stmfd sp!,{r0-r12,lr}
+	stmfd sp!,{r0-r6,lr}
 
-	ldr   r0,=GPT
+	ldr   r0, =GPT
 	blx   r0
 
+	@ verifica se ja existe alguma callback sendo executada ou checada 
+	ldr   r4, =callbacks_on
+	ldr   r0, [r4]
+	cmp   r0, #1
+	beq   SKIP
+	
+	@ verifica se ja existe algum alarme sendo executado ou checado 
+	ldr   r5, =alarms_on
+	ldr   r1, [r5]
+	cmp   r1, #1
+	beq   SKIP
+
+	@ salva spsr para o caso de outra interrupcao
+	mov   r6, spsr
+
+	@ habilita interrupcoes
+	msr  CPSR_c, #0x12
+
+	@ checa callbacks que deven ser executadas
+	mov   r1, #1
+	str   r1, [r4]
+	ldr   r0, =CHECK_CALLBACK
+	blx   r0
+	mov   r1, #0
+	str   r1, [r4]
+	
+	@ checa alarmes que devem ser executados
+	mov   r1, #1
+	str   r1, [r5]
+	ldr   r0, =CHECK_ALARM
+	blx   r0
+	mov   r1, #0
+	str   r1, [r5]
+
+	mov   spsr, r6
+	
+SKIP:	
+	
 	@ fim do tratamento
-	ldmfd sp!,{r0-r12,lr}
-	sub   lr, lr, #4
-	movs  pc, lr              @ retorna
+	ldmfd sp!, {r0-r3,lr}
+	sub   lr,  lr, #4
+	movs  pc,  lr              @ retorna
 
 @---------------------------------------------------------
 	

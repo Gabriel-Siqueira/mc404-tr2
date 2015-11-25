@@ -96,7 +96,7 @@ unsigned int get_time();
  * Parameter: 
  *   t: the new system time.
  */
-void set_time(unsigned int t);
+void set_time(unsigned int t)r
 
 
 #endif // API_ROBOT2_H

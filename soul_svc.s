@@ -1,16 +1,11 @@
 @=========================================================
-@ Codigo que implementa as chamadas de sistema e
-@ estruturas requeridas por elas
+@ Codigo que implementa as chamadas de sistema ou apenas
+@	a checagem do parametros delas no caso das mais completas
+@	que utilizao rotinas em outro codigos
 @=========================================================
-	
-@ constantes de controle
-
-.set MAX_CALLBACKS, 20
-.set MAX_ALARMS, 20
 
 @ declara rotulos globais
 
-.global CONFIG_SVC
 .global read_sonar
 .global register_proximity_callback
 .global set_motor_speed
@@ -19,26 +14,7 @@
 .global set_time
 .global set_alarm
 	
-.data
-
-ALARMS:	 		.word 0
-CALLBACKS:	.word 0
-	
 .text
-
-CONFIG_SVC:
-
-	@ zera contadores de callbacks e alarms
-	ldr r1, =CALLBACKS
-	mov r0, #0
-	str r0, [r1]
-
-	ldr r1, =ALARMS
-	mov r0, #0
-	str r0, [r1]
-
-	@ retorna da rotina
-	mov pc, lr
 
 @ realiza leitura do valor do sonar requerido
 @ recebe: r0 - sonar, retorna: r0 - valor
@@ -52,7 +28,8 @@ read_sonar:
 	ldmhsfd sp!,{pc}
 
 	@ chama rotina realiza leitura do sonar
-	bl SONAR
+	ldr r1, =SONAR
+	blx r1
 
 	@ retorno da rotina
 	ldmfd sp!,{pc}
@@ -63,35 +40,38 @@ read_sonar:
 @ -2: sonar invalido)
 register_proximity_callback:
 
-	stmfd sp!,{r4,r5,lr}
+	stmfd sp!,{r4,r5,r6,lr}
 
 	@ caso o indentificador do sonar seja invalido retorna -2
 	cmp   	r0, #16
 	movhs 	r0, #-2
-	ldmhsfd sp!,{r4,r5,pc}
+	ldmhsfd sp!,{r4,r5,r6,pc}
 
-	@ salva R0 e R1
+	@ salva R0, R1 e R2
 	mov     r4, r0
 	mov     r5, r1
+	mov 		r6, r2
 
 	@ caso o numero de callbacks se torne maior que o valor maximo retorna -1
-	ldr 		r0, =MAX_CALLBACKS
-	ldr 		r2, =CALLBACKS
+	ldr 		r0, =MAX_CALLBACKS  	@ constante declarada em soul_al_call.s
+	ldr 		r2, =callbacks_count	@ variavel declarada em soul_al_call.s
 	ldr     r1, [r2]
 	cmp 		r1, r0
 	moveq   r0, #-1 
 	ldmeqfd sp!,{r4,r5,pc}
 
-	@ incrementa o numero de callbacks
-	add r1, #1
-	str r1,[r2]
+	@ recupera r0, r1 e r2
+	mov r0, r4
+	mov r1, r5
+	mov r2, r6
 
 	@ registra callback
-	@ . . .
+	ldr r4, =NEW_CALLBACK
+	blx r4
 
 	@ como os valores eram validos retorna 0
 	mov r0, #0
-	ldmfd sp!,{r4,r5,pc}
+	ldmfd sp!,{r4,r5,r6,pc}
 
 @ ajusta velocidade de um dos motores
 @ recebe: R0 - identificador, R1 - velocidade
@@ -104,7 +84,6 @@ set_motor_speed:
 	cmp   	r0, #2
 	movhs 	r0, #-1
 	ldmhsfd sp!,{pc}
-
 	
 	@ caso a velocidade seja invalida retorna -2
 	cmp   r1, #0x40
@@ -114,7 +93,9 @@ set_motor_speed:
 	@ realiza alteracao no motor requerido
 	cmp   r0, #0
 	mov   r0, r1
+	ldreq r2, =MOTOR0 
 	bleq  MOTOR0
+	ldrne r2, =MOTOR1 
 	blne  MOTOR1
 
 	@ como os valores eram validos retorna 0
@@ -157,7 +138,7 @@ set_motors_speed:
 get_time:
 
 	@ coloca tempo do sistema atual em r0
-	ldr r1, =CONTADOR
+	ldr r1, =CONTADOR 		@ variavel declarada em soul_gtp.s
 	ldr r0, [r1]
 	
 	@ retorno da rotina
@@ -168,7 +149,7 @@ get_time:
 set_time:	
 
 	@ altera tempo do sistema
-	ldr r1, =CONTADOR
+	ldr r1, =CONTADOR			@ variavel declarada em soul_gtp.s	
 	str r0, [r1]
 	
 	@ retorno da rotina
@@ -191,19 +172,20 @@ set_alarm:
 	ldmlofd sp!,{r4,r5,pc}
 	
 	@ caso o numero de alarmes se torne maior que o valor maximo retorna -1
-	ldr 		r0, =MAX_ALARMS
-	ldr 		r2, =ALARMS
+	ldr 		r0, =MAX_ALARMS			@ constante declarada em soul_al_call.s
+	ldr 		r2, =alarms_count		@ variavel declarada em soul_al_call.s
 	ldr     r1, [r2]
 	cmp 		r1, r0
 	moveq   r0, #-1 
 	ldmeqfd sp!,{r4,r5,pc}
 
-	@ incrementa o numero de alarmes
-	add r1, #1
-	str r1,[r2]
-
+	@ recupera r0 r r1
+	mov r0, r4
+	mov r1, r5
+	
 	@ registra o alarme
-	@ . . .
+	ldr r4, =NEW_ALARM
+	blx r4
 
 	@ como os valores eram validos retorna 0
 	mov r0, #0
