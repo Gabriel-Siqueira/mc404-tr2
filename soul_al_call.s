@@ -52,22 +52,20 @@ callbacks_vec:	  .skip MAX_CALLBACKS * 7
 
 @ inicializa enstruturas para armazenar alarmes e callbacks
 CONFIG_AL_CALL:
+	mov r0, #0
+
 	@ zera contadores de callbacks e alarms
 	ldr r1, =callbacks_count
-	mov r0, #0
 	str r0, [r1]
 
 	ldr r1, =alarms_count
-	mov r0, #0
 	str r0, [r1]
 
 	@ zera indicadores de callbacks e alarms
 	ldr r1, =callbacks_on
-	mov r0, #0
 	str r0, [r1]
 
 	ldr r1, =alarms_on
-	mov r0, #0
 	str r0, [r1]
 	
 	@ retorna da rotina
@@ -209,9 +207,13 @@ loop_al:
 	blx  r2
 	ldr  r1, [r4, #tempo]
 	cmp  r1, r0
-	bhi  return_to_call
+	bhi  return_to_al
 	
 call_user_al:
+	
+	@ indica que o alame ja foi usado
+	mov  r1, #0
+	strb r1, [r4, #tempo]
 	
 	@ muda para modo de usuario
 	mrs r0, cpsr

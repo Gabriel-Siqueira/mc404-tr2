@@ -23,7 +23,6 @@ speeds:	 .word  0
 
 .text
 .align 4
-
 	
 CONFIG_GPIO:
 
@@ -36,10 +35,9 @@ CONFIG_GPIO:
 
 	@ zera DR
 	mov r0, #0
-	str r0, [r1, #GPIO_DR]
+	str r0, [r1,#GPIO_DR]
 	
 	mov pc, lr
-
 	
 @ altera velocidades dos motores
 @ recebe: r0 - mascara com velocidades
@@ -66,7 +64,7 @@ CHANGE_SPEEDS:
 	str  r2, [r1, #GPIO_DR]
 
 	@ Volta da rotina
-	mov pc, lr
+	mov  pc, lr
 	
 @ realiza leitura do valor do sonar requerido
 @ recebe: r0 - sonar, retorna: r0 - valor

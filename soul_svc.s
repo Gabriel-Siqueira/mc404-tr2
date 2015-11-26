@@ -79,7 +79,7 @@ register_proximity_callback:
 @ retorna: R0 - (0: sucesso, -1: motor invalido, -2: velocidade invalida)
 set_motor_speed:
 
-	stmfd sp!,{lr}
+	stmfd 	sp!,{lr}
 
 	@ caso o indentificador do motor seja invalido retorna -1
 	cmp   	r0, #2
@@ -118,7 +118,7 @@ DONE:
 	blx 	r2
 
 	@ como os valores eram validos retorna 0
-	mov r0, #0
+	mov 	r0, #0
 	ldmfd sp!,{pc}
 
 @ ajusta velocidade dos motores
@@ -128,16 +128,17 @@ DONE:
 set_motors_speed:
 
 	stmfd sp!,{lr}
+	mov r9, lr
 
 	@ caso a velocidade do motor 0 seja invalida retorna -1
 	cmp  	 	r0, #0x40
 	movhs 	r0, #-1
-	ldmhsfd sp!,{r4,pc}
+	ldmhsfd sp!,{pc}
 
 	@ caso a velocidade do motor 1 seja invalida retorna -2
 	cmp   	r1, #0x40
 	movhs 	r0, #-2
-	ldmhsfd sp!,{r4,pc}
+	ldmhsfd sp!,{pc}
 
 	@ realiza alteracao nos motores
 	ldr   r2, =speeds
@@ -162,7 +163,8 @@ set_motors_speed:
 
 	@ como os valores eram validos retorna 0
 	mov 	r0, #0
-	ldmfd sp!,{pc}
+	@ ldmfd sp!,{pc}
+	mov pc, r9
 	
 @ retorna tempo do sistema
 @ retorna: R0 - tempo

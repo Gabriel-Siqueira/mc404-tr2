@@ -140,8 +140,6 @@ SVC_HANDLER:
 
 	@ fim do tratamento
 	ldmfd sp!,{r0-r12,pc}
-	sub   lr, lr, #4
-	movs  pc, lr 							@ retorna
 
 @---------------------------------------------------------
 
@@ -149,11 +147,11 @@ SVC_HANDLER:
 @*----------------- insterrupcoes por hardware -----------
 
 IRQ_HANDLER:
-	stmfd sp!,{r0-r6,lr}
+	stmfd sp!,{r0-r12,lr}
 
 	ldr   r0, =GPT
 	blx   r0
-
+	b 		SKIP
 	@ verifica se ja existe alguma callback sendo executada ou checada 
 	ldr   r4, =callbacks_on
 	ldr   r0, [r4]
@@ -176,16 +174,16 @@ IRQ_HANDLER:
 	@ checa callbacks que deven ser executadas
 	mov   r1, #1
 	str   r1, [r4]
-	@ ldr   r0, =CHECK_CALLBACK
-	blx   r0
+	ldr   r0, =CHECK_CALLBACK
+	@ blx   r0
 	mov   r1, #0
 	str   r1, [r4]
 	
 	@ checa alarmes que devem ser executados
 	mov   r1, #1
 	str   r1, [r5]
-	@ ldr   r0, =CHECK_ALARM
-	blx   r0
+	ldr   r0, =CHECK_ALARM
+	@ blx   r0
 	mov   r1, #0
 	str   r1, [r5]
 
