@@ -15,9 +15,9 @@
 .set GPT_BASE, 0x53FA0000
 .set GPT_CR,   0x0
 .set GPT_PR,   0x4
-.set GPT_OCR1, 0x10
-.set GPT_IR,   0xC
 .set GPT_SR,   0x8
+.set GPT_IR,   0xC
+.set GPT_OCR1, 0x10
 
 .data
 
@@ -25,8 +25,14 @@
 CONTADOR:	.word 0
 
 .text
+.align 4
 	
 CONFIG_GPT:
+
+	@ Zera o contador
+	ldr r2, =CONTADOR
+	mov r0, #0
+	str r0, [r2]
 
 	@ insere em r1 o endereco base para configurar o GPT
 	ldr  r1, =GPT_BASE
@@ -40,7 +46,7 @@ CONFIG_GPT:
 	str  r0, [r1, #GPT_PR]
 
 	@ ajusta o valor no qual a interrupcao sera gerada
-	mov  r0, #TIME_SZ  
+	ldr  r0, =TIME_SZ  
 	str  r0, [r1, #GPT_OCR1]
 	
 	@ habilita interrupção 'Output Compare Channel 1'

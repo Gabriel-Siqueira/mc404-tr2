@@ -6,9 +6,10 @@
 .global add_alarm	
 .global get_time
 .global set_time
-	
-.set DELAY_VALUE, 1000000 @teste
 
+.text
+.align 4
+	
 @ muda velocidade de um dos motores
 @ recebe: r0 - numero do motor, r1 - velocidade
 set_motor_speed:

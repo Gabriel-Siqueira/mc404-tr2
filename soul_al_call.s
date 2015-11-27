@@ -5,6 +5,10 @@
 @	usuario nessas chamadas
 @=========================================================
 	
+@ constantes de controle
+.set MAX_CALLBACKS, 8
+.set MAX_ALARMS, 8
+
 @ declara rotulos globais
 .global CONFIG_AL_CALL
 .global alarms_count
@@ -19,18 +23,16 @@
 .global CHECK_CALLBACK
 .global return_to_al
 .global return_to_call	
+
+.data
+
+@*--------------------- Dados -------------------------
 	
 @ indica que as callback estao sendo checadas ou executadas
 alarms_on:		.word 0
 	
 @ indica que os alarmes estao sendo checados ou executados
 callbacks_on:	.word 0
-
-@ constantes de controle
-.set MAX_CALLBACKS, 20
-.set MAX_ALARMS, 20
-
-.data
 
 @ contadors
 alarms_count:	 		.word 0
@@ -48,8 +50,15 @@ alarms_vec:				.skip MAX_ALARMS * 9
 .set distancia,  1   @ 2 bytes
 .set funcao,     3   @ 4 bytes
 callbacks_vec:	  .skip MAX_CALLBACKS * 7
-.set callbacks_end, callbacks_vec + MAX_CALLBACKS * 7 @ posicao final do vetor
 
+@------------------------------------------------------
+
+
+.text
+.align 4
+	
+@*--------------------- Inicializa -------------------------
+	
 @ inicializa enstruturas para armazenar alarmes e callbacks
 CONFIG_AL_CALL:
 	mov r0, #0
@@ -68,8 +77,33 @@ CONFIG_AL_CALL:
 	ldr r1, =alarms_on
 	str r0, [r1]
 	
+	@ Inicialmente nenhum alarme esta ativo
+	ldr  r0, =alarms_vec
+	ldr  r1, =alarms_end
+	
+loop_con_al:
+	
+	@ condicao de parada
+	cmp  r0, r1
+	beq  end_loop_con_al
+
+	@ zera ativo
+	mov  r2, #0
+	strb r2, [r0, #ativo]
+	
+	@ incremento
+	add r0, r0, #9
+	b		loop_con_al
+
+end_loop_con_al:
+
 	@ retorna da rotina
 	mov pc, lr
+
+@-----------------------------------------------------------
+
+
+@*--------------------- Insercoes -------------------------
 
 @ registra novo callback
 @ recebe: R0 - sonar, R1 - distancia, R2 - endereco da funcao
@@ -79,6 +113,7 @@ NEW_CALLBACK:
 
 	@ Obtem endereco onde serao salvos os valores da nova callback
 	ldr r4, =callbacks_count
+	ldr r4, [r4]
 	mov r5, #7
 	mul r3, r4, r5
 	ldr r4, =callbacks_vec
@@ -132,13 +167,22 @@ end_loop_na:
 	ldmfd sp!, {r4}
 	mov pc, lr
 
+@----------------------------------------------------------
+	
+
+@*--------------------- Checagens/execucoes -------------------------
+	
 @ verifica se existe alguma callback para ser executada
 CHECK_CALLBACK:
 	
 	stmfd sp!, {r4,r5,r7,lr}
 
 	ldr r4, =callbacks_vec
-	ldr r5, =callbacks_end
+	ldr r0, =callbacks_count
+	ldr r0, [r0]
+	mov r7, #7
+	mul r5, r0, r7
+	add r5, r5, r4 
 	
 @ verifica cada um dos callbacks
 loop_call:
@@ -153,7 +197,7 @@ loop_call:
 	blx  r2
 	ldrh r1, [r4, #distancia]
 	cmp  r1, r0
-	bhi  return_to_call
+	bhi  skip_call
 	
 call_user_fun:
 	
@@ -173,47 +217,56 @@ call_user_fun:
 	
 return_to_call:
 
+	@ muda de modo de supervisor para o de interrupcao
+	mrs r0, cpsr
+	bic r0, r0, #0x1F     @ limpa bites de modo
+	orr r0, r0, #0x12     @ seleciona bits para modo de interrupcao
+	msr cpsr_c, r0
+
+skip_call:	
+	
 	@ incremento
 	add r4, r4, #7
 	b		loop_call
-	
+
 end_loop_call:	
 
 	@ Retorna da rotina
-	ldmfd sp!, {r4,r7,pc}
+	ldmfd sp!, {r4,r5,r7,pc}
 	
 @ verifica se existe algum alarme para ser executado
 CHECK_ALARM:	
 	
-	stmfd sp!, {r4,r7,lr}
+	stmfd sp!, {r4,r5,r7,lr}
 
-	ldr r4, =alarms_vec
+	ldr  r4, =alarms_vec
+	ldr  r5, =alarms_end
 	
-@ verifica cada um dos callbacks
+@ verifica cada um dos alarmes
 loop_al:
 
 	@ condicao de parada
-	ldr  r1, =alarms_end
-	cmp  r4, r1
+	cmp  r4, r5
 	beq  end_loop_al
 
 	@ verifica se o alarme esta ativo
 	ldrb r1, [r4, #ativo]
 	cmp  r1, #0
-	beq  return_to_al
+	beq  skip_al
 	
 	@ verifica se a funcao sera chamada
-	ldr  r2, =get_time
-	blx  r2
+	@ ldr  r2, =get_time
+	@ blx  r2
+	mov  r0, #100
 	ldr  r1, [r4, #tempo]
 	cmp  r1, r0
-	bhi  return_to_al
+	bhi  skip_al
 	
 call_user_al:
 	
 	@ indica que o alame ja foi usado
 	mov  r1, #0
-	strb r1, [r4, #tempo]
+	strb r1, [r4, #ativo]
 	
 	@ muda para modo de usuario
 	mrs r0, cpsr
@@ -231,6 +284,14 @@ call_user_al:
 	
 return_to_al:
 
+	@ muda de modo de supervisor para o de interrupcao
+	mrs r0, cpsr
+	bic r0, r0, #0x1F     @ limpa bites de modo
+	orr r0, r0, #0x12     @ seleciona bits para modo de interrupcao
+	msr cpsr_c, r0
+	
+skip_al:	
+
 	@ incremento
 	add r4, r4, #9
 	b		loop_al
@@ -238,4 +299,6 @@ return_to_al:
 end_loop_al:	
 
 	@ Retorna da rotina
-	ldmfd sp!, {r4,r7,pc}
+	ldmfd sp!, {r4,r5,r7,pc}
+
+@--------------------------------------------------------------------

@@ -24,7 +24,7 @@ void set_motor_speed(unsigned char id, unsigned char speed);
 
 /* 
  * Sets both motors speed. 
- * Parameters: 
+ * , riiarameters: 
  *   spd_m0: the speed of motor 0 (Only the last 6 bits are used)
  *   spd_m1: the speed of motor 1 (Only the last 6 bits are used)
  * Returns:

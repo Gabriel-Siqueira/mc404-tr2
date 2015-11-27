@@ -4,13 +4,17 @@
 @=========================================================
 
 @ Constantes de controle
-.set DELAY_VALUE, 500000
+.set DELAY_VALUE, 100000
+.set DELAY_VALUE_1, DELAY_VALUE * 3
+.set DELAY_VALUE_2, DELAY_VALUE * 2
 
 @ declara rotulos globais
 .global CONFIG_GPIO	
 .global CHANGE_SPEEDS
 .global SONAR	
 .global speeds	
+
+.data
 	
 @ variavel que armazena as velocidades do motor
 speeds:	 .word  0
@@ -23,6 +27,8 @@ speeds:	 .word  0
 
 .text
 .align 4
+	
+@*--------------------- Inicializa -------------------------
 	
 CONFIG_GPIO:
 
@@ -38,6 +44,10 @@ CONFIG_GPIO:
 	str r0, [r1,#GPIO_DR]
 	
 	mov pc, lr
+	
+@------------------------------------------------------
+	
+@*--------------------- Motores -------------------------
 	
 @ altera velocidades dos motores
 @ recebe: r0 - mascara com velocidades
@@ -65,25 +75,28 @@ CHANGE_SPEEDS:
 
 	@ Volta da rotina
 	mov  pc, lr
+
+@------------------------------------------------------
+	
+
+@*--------------------- Sonar -------------------------
 	
 @ realiza leitura do valor do sonar requerido
 @ recebe: r0 - sonar, retorna: r0 - valor
 SONAR:
 
-	@ insere em r1 o endereco base para configurar o GPIO
+	@ insere em r3 o endereco base para configurar o GPIO
 	ldr  r3, =GPIO_BASE
 	
 	@ grava valor de SONAR_MUX e zera o TRIGGER
 	ldr  r2, [r3, #GPIO_DR]
-	bic  r2, r2,  #0x0000007C
-	orr  r2, r2,  R0, LSL #2     @ grava valor 
+	bic  r2, r2,  #0x0000003C
+	orr  r2, r2,  r0, LSL #2     @ grava valor 
 	and  r2, r2,  #0xFFFFFFFD    @ zera TRIGGER
 	str  r2, [r3, #GPIO_DR]
 	
 	@ tempo de espera nescessario para setar o TRIGGER
-	ldr  r1, =DELAY_VALUE
-	mov  r0, #3
-	mul  r2, r1, r0
+	ldr  r2, =DELAY_VALUE_1
 DELAY1:
 	subs r2, r2, #1
 	bne  DELAY1
@@ -94,9 +107,7 @@ DELAY1:
 	str  r2, [r3, #GPIO_DR]
 	
 	@ tempo de espera nescessario para zerar o TRIGGER
-	ldr  r1, =DELAY_VALUE
-	mov  r0, #3
-	mul  r2, r1, r0
+	ldr  r2, =DELAY_VALUE_1
 DELAY2:
 	subs r2, r2, #1
 	bne  DELAY2
@@ -108,14 +119,12 @@ DELAY2:
 
 WAIT_FLAG:	
 	@ Espera ate FLAG estar com valor 1
-	ldr  r2, [r3, #GPIO_PSR]
+	ldr  r2, [r3, #GPIO_DR]
 	tst  r2, #1
 	bne  READY
 
 	@ Tempo de espera entre checagens da FLAG
-	ldr  r1, =DELAY_VALUE
-	mov  r0, #2
-	mul  r2, r1, r0
+	ldr  r2, =DELAY_VALUE_2
 DELAY3:
 	subs r2, r2, #1
 	bne  DELAY3
@@ -130,3 +139,15 @@ READY:
 
 	@ Volta da rotina
 	mov pc, lr
+
+@------------------------------------------------------	
+
+
+
+
+
+
+
+
+
+

@@ -14,6 +14,7 @@
 .global CONFIG_TZIC
 
 .text
+.align 4
 
 CONFIG_TZIC:
 	
@@ -29,7 +30,6 @@ CONFIG_TZIC:
 	str	r0, [r1, #TZIC_ENSET1]
 
 	@ Configura interrupt39 priority como 1
-
 	ldr r0, [r1, #TZIC_PRIORITY9]
 	bic r0, r0, #0xFF000000
 	mov r2, #1

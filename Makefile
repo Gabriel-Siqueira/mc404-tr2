@@ -37,11 +37,19 @@ all: disk.img
 SOUL.x: $(SOUL_OBJS)
 	$(LD) $^ -o $@ $(LD_FLAGS) --section-start=.iv=0x778005e0 -Ttext=0x77800700 -Tdata=0x77801800 -e 0x778005e0
 
+LOCO1.x: segue-parede2.o bico.o
+	$(LD) $^ -o $@ $(LD_FLAGS) -Ttext=0x77802000
+
+LOCO2.x: ronda2.o bico.o
+	$(LD) $^ -o $@ $(LD_FLAGS) -Ttext=0x77802000
+
+# test
 LOCO.x: loco.o bico.o
 	$(LD) $^ -o $@ $(LD_FLAGS) -Ttext=0x77802000
 
-disk.img: SOUL.x LOCO.x
-	mksd.sh --so SOUL.x --user LOCO.x
+# Para gerar o disk.img para o outro codigo trocar LOCO(1,2).x
+disk.img: SOUL.x LOCO2.x
+	mksd.sh --so SOUL.x --user LOCO2.x
 
 clean:
-	rm -f SOUL.x LOCO.x disk.img *.o
+	rm -f SOUL.x LOCO*.x disk.img *.o

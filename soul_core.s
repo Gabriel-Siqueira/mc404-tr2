@@ -2,9 +2,10 @@
 @ Programa principal da camada soul, responsavel pela
 @ inicaializacao do sistema e tratamento das interrupcoes,
 @ gerenciando os subprogramas dessa camada.
-@=========================================================
+@ =========================================================
 
 .data
+
 @*---------------------- dados ---------------------------
 
 @ reserva espaco das pilhas
@@ -42,11 +43,6 @@ interrupt_vector:
 @*----------------------- Reset ---------------------------
 	
 RESET_HANDLER:
-	
-	@ Zera o contador
-	ldr r2, =CONTADOR
-	mov r0, #0
-	str r0, [r2]
 
 	@ Ajusta o endereço do vetor de interrupçoes
 	ldr r0, =interrupt_vector
@@ -104,7 +100,7 @@ RESET_HANDLER:
 @*----------------- insterrupcoes por software -----------
 
 SVC_HANDLER:
-	stmfd sp!,{r0-r12,lr}
+	stmfd sp!,{r5,r7,lr}
 
 	cmp   r7, #16
 	ldreq r5, =read_sonar
@@ -139,7 +135,8 @@ SVC_HANDLER:
 	blxeq r5
 
 	@ fim do tratamento
-	ldmfd sp!,{r0-r12,pc}
+	ldmfd sp!,{r5,r7,lr}
+	movs  pc,  lr
 
 @---------------------------------------------------------
 
@@ -151,7 +148,7 @@ IRQ_HANDLER:
 
 	ldr   r0, =GPT
 	blx   r0
-	b 		SKIP
+
 	@ verifica se ja existe alguma callback sendo executada ou checada 
 	ldr   r4, =callbacks_on
 	ldr   r0, [r4]
@@ -166,7 +163,7 @@ IRQ_HANDLER:
 
 	@ salva spsr para o caso de outra interrupcao
 	mrs   r6, spsr
-@	stmfd sp!, {r6}
+	stmfd sp!, {r6}
 
 	@ habilita interrupcoes
 	msr  CPSR_c, #0x12
@@ -175,7 +172,7 @@ IRQ_HANDLER:
 	mov   r1, #1
 	str   r1, [r4]
 	ldr   r0, =CHECK_CALLBACK
-	@ blx   r0
+	blx   r0
 	mov   r1, #0
 	str   r1, [r4]
 	
@@ -183,17 +180,17 @@ IRQ_HANDLER:
 	mov   r1, #1
 	str   r1, [r5]
 	ldr   r0, =CHECK_ALARM
-	@ blx   r0
+	blx   r0
 	mov   r1, #0
 	str   r1, [r5]
 
-@	ldmfd sp!, {r6}
+	ldmfd sp!, {r6}
 	msr   spsr, r6
 	
 SKIP:	
 	
 	@ fim do tratamento
-	ldmfd sp!, {r0-r6,lr}
+	ldmfd sp!, {r0-r12,lr}
 	sub   lr,  lr, #4
 	movs  pc,  lr              @ retorna
 

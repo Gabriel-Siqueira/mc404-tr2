@@ -16,7 +16,10 @@
 .global back_svc
 	
 .text
+.align 4	
 
+@*------------------------- Sonar --------------------------
+	
 @ realiza leitura do valor do sonar requerido
 @ recebe: r0 - sonar, retorna: r0 - valor
 read_sonar:
@@ -34,6 +37,10 @@ read_sonar:
 
 	@ retorno da rotina
 	ldmfd sp!,{pc}
+	
+@-----------------------------------------------------------
+
+@*-------------------- Callbacks ---------------------------
 	
 @ registra callback
 @ recebe: R0 - sonar, R1 - distancia, R2 - endereco da funcao
@@ -71,9 +78,14 @@ register_proximity_callback:
 	blx r4
 
 	@ como os valores eram validos retorna 0
-	mov r0, #0
+	mov 	r0, #0
 	ldmfd sp!,{r4,r5,r6,pc}
 
+@-----------------------------------------------------------
+
+
+@*------------------------ Motores -------------------------
+	
 @ ajusta velocidade de um dos motores
 @ recebe: R0 - identificador, R1 - velocidade
 @ retorna: R0 - (0: sucesso, -1: motor invalido, -2: velocidade invalida)
@@ -93,7 +105,7 @@ set_motor_speed:
 
 	@ realiza alteracao no motor requerido
 	cmp   r0, #0
-	ldr   r2, =speeds
+	ldr   r2, =speeds     @ variavel definida em soul_gpio.s
 	ldr   r0, [r2]
 	bne   MOTOR1
 
@@ -110,7 +122,6 @@ MOTOR1:
 
 DONE:
 	@ salva nova mascara de velocidades
-	ldr   r2, =speeds
 	str   r0, [r2]
 
 	@ muda velocidades do motor
@@ -128,7 +139,6 @@ DONE:
 set_motors_speed:
 
 	stmfd sp!,{lr}
-	mov r9, lr
 
 	@ caso a velocidade do motor 0 seja invalida retorna -1
 	cmp  	 	r0, #0x40
@@ -153,7 +163,6 @@ set_motors_speed:
 	orr   r3, r3, r1, LSL #26
 
 	@ salva nova mascara de velocidades
-	ldr   r2, =speeds
 	str   r3, [r2]
 
 	@ muda velocidades do motor
@@ -163,8 +172,12 @@ set_motors_speed:
 
 	@ como os valores eram validos retorna 0
 	mov 	r0, #0
-	@ ldmfd sp!,{pc}
-	mov pc, r9
+	ldmfd sp!,{pc}
+
+@-----------------------------------------------------------
+
+
+@*-------------------- Tempo/Alarmes -----------------------
 	
 @ retorna tempo do sistema
 @ retorna: R0 - tempo
@@ -176,7 +189,7 @@ get_time:
 	
 	@ retorno da rotina
 	mov pc, lr
-	
+
 @ altera tempo do sistema
 @ recebe: R0 - tempo
 set_time:	
@@ -224,7 +237,12 @@ set_alarm:
 	mov   r0, #0
 	ldmfd sp!,{r4,r5,pc}
 
-@ Retorna para o modo de sistema depois da chamada de uma funcao
+@-----------------------------------------------------------
+
+
+@*--------------- Retorno ao mode de supervisor ---------------
+	
+@ Vai para o modo de supervisor depois da chamada de uma funcao
 @ de callback ou alarme
 back_svc:
 
@@ -241,8 +259,9 @@ back_svc:
 	beq 	return_to_call
 
 	@ se nao for nenhum dos casos anteriores nao faz nada
-	mov   pc, lr
+	movs  pc, lr
 
+@-----------------------------------------------------------
 
 
 
